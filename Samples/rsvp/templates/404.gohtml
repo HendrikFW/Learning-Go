@@ -1,4 +1,5 @@
-{{define "content"}}
+{{define "404"}}
+{{template "header" .}}
 
 <h1>404 - Not Found</h1>
 <h2>The page you're looking for dosn't exists: <i>{{.Path}}</i></h2>
@@ -7,4 +8,5 @@
     Go back to <a href="/">Homepage</a>
 </p>
 
+{{template "footer"}}
 {{end}}

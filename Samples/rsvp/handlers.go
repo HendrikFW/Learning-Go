@@ -57,7 +57,7 @@ func staticFilesHandler() http.Handler {
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/" {
-		view(w, "index", &pageModel{Title: "Super duper party"})
+		view(w, "home", &pageModel{Title: "Super duper party"})
 	} else {
 		errorHandler(w, r, http.StatusNotFound)
 	}
@@ -120,8 +120,7 @@ func errorHandler(w http.ResponseWriter, r *http.Request, errorCode int) {
 }
 
 func view(w http.ResponseWriter, name string, data interface{}) {
-	t, _ := templates[name]
-	err := t.ExecuteTemplate(w, "base", data)
+	err := tmpl.ExecuteTemplate(w, name, data)
 	if err != nil {
 		log.Println(err)
 	}

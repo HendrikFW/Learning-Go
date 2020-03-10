@@ -1,4 +1,5 @@
-{{define "content"}}
+{{define "list"}}
+{{template "header" .}}
 
 <h1 class="display-4">{{.Title}}</h1>
 
@@ -27,4 +28,5 @@
     </tbody>
 </table>
 
+{{template "footer"}}
 {{end}}

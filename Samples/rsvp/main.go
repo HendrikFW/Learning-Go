@@ -11,12 +11,7 @@ import (
 var initOk bool = false
 
 var db rsvpDatabase
-
-var templates map[string]*template.Template
-
-var templateFuncs = template.FuncMap{
-	"fmtDate": fmtDate,
-}
+var tmpl *template.Template
 
 func fmtDate(date time.Time) string {
 	return fmt.Sprintf("%d.%d.%d %d:%d:%d",
@@ -43,13 +38,12 @@ func init() {
 	}
 
 	fmt.Println("Initialize templates")
-	templates = make(map[string]*template.Template)
-	templates["index"] = template.Must(template.ParseFiles("templates/home.gohtml", "templates/_base.gohtml"))
-	templates["form"] = template.Must(template.ParseFiles("templates/form.gohtml", "templates/_base.gohtml"))
-	templates["thanks"] = template.Must(template.ParseFiles("templates/thanks.gohtml", "templates/_base.gohtml"))
-	templates["list"] = template.Must(template.New("list").Funcs(templateFuncs).ParseFiles("templates/list.gohtml", "templates/_base.gohtml"))
-	templates["404"] = template.Must(template.ParseFiles("templates/404.gohtml", "templates/_base.gohtml"))
-	templates["500"] = template.Must(template.ParseFiles("templates/500.gohtml", "templates/_base.gohtml"))
+
+	templateFuncs := template.FuncMap{
+		"fmtDate": fmtDate,
+	}
+
+	tmpl = template.Must(template.New("").Funcs(templateFuncs).ParseGlob("./templates/*"))
 
 	initOk = true
 }
@@ -67,7 +61,7 @@ func main() {
 	mux.HandleFunc("/list", basicAuth(handleList))
 
 	server := &http.Server{
-		Addr:    ":45612",
+		Addr:    ":5000",
 		Handler: mux,
 	}
 
