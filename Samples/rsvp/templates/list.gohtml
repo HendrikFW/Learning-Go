@@ -1,0 +1,30 @@
+{{define "content"}}
+
+<h1 class="display-4">{{.Title}}</h1>
+
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>First name</th>
+            <th>Last name</th>
+            <th>Email</th>
+            <th>Attend</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Submissions}}
+        <tr>
+            <td>{{.ID}}</td>
+            <td>{{fmtDate .Date}}</td>
+            <td>{{.FirstName}}</td>
+            <td>{{.LastName}}</td>
+            <td>{{.Email}}</td>
+            <td>{{.Attend}}</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+
+{{end}}

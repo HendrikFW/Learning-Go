@@ -1,0 +1,19 @@
+{{define "content"}}
+
+<h1 class="display-4">Thank you, {{.FirstName}}!</h1>
+
+{{if .Attend}}
+<div class="alert alert-success mt-3">
+    I'm glad you can make it!
+</div>
+{{else}}
+<div class="alert alert-secondary mt-3">
+    Sorry to hear you can't come.
+</div>
+{{end}}
+
+<p>
+    <a class="btn btn-sm btn-outline-secondary" href="/">Go back to Homepage</a>
+</p>
+
+{{end}}
