@@ -7,7 +7,8 @@
 
 ## Guides
 
-- [Ultimate Visual Guide to Go Enums and iota](https://blog.learngoprogramming.com/golang-const-type-enums-iota-bc4befd096d3)(*Inanc Gumus*, *19.10.2017*)
+- [Ultimate Visual Guide to Go Enums and iota](https://blog.learngoprogramming.com/golang-const-type-enums-iota-bc4befd096d3) (*Inanc Gumus*, *19.10.2017*)
+- [Validation Snippets for Go](https://www.alexedwards.net/blog/validation-snippets-for-go) (*Alex Edwards*, *05.08.2017*)
 
 ## Common problems & workarounds or fixes
 
