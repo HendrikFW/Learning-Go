@@ -1,0 +1,16 @@
+{{define "signin"}}
+<h1>Sign in</h1>
+
+<form method="POST">
+    <label for="username">Username</label><br />
+    <input type="text" id="username" name="username" /><br /><br />
+
+    <label for="password">Password</label><br />
+    <input type="password" id="password" name="password" /><br /><br />
+
+    <label for="rememberme">Remember me</label><br />
+    <input type="checkbox" id="rememberme" name="rememberme" /><br /><br />
+
+    <input type="submit" value="Sign in" />
+</form>
+{{end}}

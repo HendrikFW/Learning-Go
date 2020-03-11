@@ -4,20 +4,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
+	"text/template"
 	"time"
 )
 
-type user struct {
-	Authenticated bool
-	UserName      string
-}
-
-type handler func(w http.ResponseWriter, r *http.Request)
-
-type authHandler func(u user, w http.ResponseWriter, r *http.Request)
+var t *template.Template
 
 func main() {
+
+	t = template.Must(template.New("").ParseGlob("./templates/*"))
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", allowAnonymous(homeHandler))
@@ -34,33 +29,54 @@ func main() {
 }
 
 func homeHandler(u user, w http.ResponseWriter, r *http.Request) {
-	var msg string
-	if u.Authenticated {
-		msg = fmt.Sprintf("signed in. Hello, %s!", u.UserName)
-	} else {
-		msg = "not signed in."
+	err := t.ExecuteTemplate(w, "home", u)
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	fmt.Fprintf(w, "Homepage, You're %s", msg)
 }
 
 func signinHandler(u user, w http.ResponseWriter, r *http.Request) {
 	if u.Authenticated {
-		fmt.Fprintf(w, "You're already signed in %s!", u.UserName)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
-	year := 365 * 24 * 60 * 60
-	signInCookie := fmt.Sprintf("signin=%s; Max-Age=%d; HttpOnly; Path=/; SameSite=Strict", "Hendrik", year)
-	w.Header().Add("Set-Cookie", signInCookie)
+	switch r.Method {
+	case "GET":
+		err := t.ExecuteTemplate(w, "signin", nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+	case "POST":
+		username := r.FormValue("username")
+		password := r.FormValue("password")
+		remember := r.FormValue("rememberme") != ""
 
-	returnURL := r.URL.Query().Get("returnURL")
-	if returnURL != "" {
-		w.Header().Add("Location", returnURL)
-		w.WriteHeader(http.StatusTemporaryRedirect)
-		return
-	} else {
-		fmt.Fprintf(w, "%s Sign in", r.Method)
+		if username != "Admin" || password != "Password123" {
+			http.Error(w, "Wrong username or password", http.StatusUnauthorized)
+			return
+		}
+
+		signinCookie := &http.Cookie{
+			Name:     "signin",
+			Value:    username,
+			HttpOnly: true,
+			Path:     "/",
+			SameSite: http.SameSiteStrictMode,
+		}
+
+		if remember {
+			signinCookie.MaxAge = 365 * 24 * 60 * 60
+		}
+
+		http.SetCookie(w, signinCookie)
+
+		redirectURL := r.URL.Query().Get("returnURL")
+		if redirectURL == "" {
+			redirectURL = "/"
+		}
+
+		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 	}
 }
 
@@ -72,62 +88,9 @@ func signoutHandler(u user, w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, signoutCookie)
-	fmt.Fprintln(w, "You've been signed out!")
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
 func secureHandler(u user, w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Secure site. Welcome %s!", u.UserName)
-}
-
-func method(next handler, allowed ...string) handler {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if contains(allowed, r.Method) {
-			next(w, r)
-		} else {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
-	}
-}
-
-func secure(next authHandler) handler {
-	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("signin")
-		if err != nil {
-			redirectURL := fmt.Sprintf("/signin?returnURL=%s", url.QueryEscape(r.URL.Path))
-			w.Header().Add("Location", redirectURL)
-			w.WriteHeader(http.StatusTemporaryRedirect)
-		} else {
-			u := user{
-				UserName: cookie.Value,
-			}
-			next(u, w, r)
-		}
-	}
-}
-
-func allowAnonymous(next authHandler) handler {
-	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("signin")
-		if err != nil {
-			u := user{
-				Authenticated: false,
-			}
-			next(u, w, r)
-		} else {
-			u := user{
-				Authenticated: true,
-				UserName:      cookie.Value,
-			}
-			next(u, w, r)
-		}
-	}
-}
-
-func contains(slice []string, element string) bool {
-	for _, e := range slice {
-		if e == element {
-			return true
-		}
-	}
-	return false
 }
