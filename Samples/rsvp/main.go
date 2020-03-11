@@ -6,12 +6,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/urfave/cli/v2"
 )
 
 var db rsvpDatabase
 var tmpl *template.Template
+var adminPw string
 
 func main() {
 	app := &cli.App{
@@ -29,6 +31,13 @@ func main() {
 				Value:   ":memory:",
 				Usage:   "The SQLite connection string to use",
 				Aliases: []string{"cs"},
+			},
+			&cli.StringFlag{
+				Name:        "password",
+				Value:       "Test123",
+				Usage:       "Use username 'Admin' to view submissions",
+				Aliases:     []string{"pw"},
+				Destination: &adminPw,
 			},
 		},
 		Action: launch,
@@ -72,8 +81,10 @@ func launch(c *cli.Context) error {
 
 	addr := fmt.Sprintf(":%d", c.Int("port"))
 	server := &http.Server{
-		Addr:    addr,
-		Handler: mux,
+		Addr:         addr,
+		Handler:      mux,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	log.Printf("Start listen on %s\n", server.Addr)
