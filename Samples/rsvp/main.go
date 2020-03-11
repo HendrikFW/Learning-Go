@@ -5,53 +5,63 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"time"
-)
+	"os"
 
-var initOk bool = false
+	"github.com/urfave/cli/v2"
+)
 
 var db rsvpDatabase
 var tmpl *template.Template
 
-func fmtDate(date time.Time) string {
-	return fmt.Sprintf("%d.%d.%d %d:%d:%d",
-		date.Day(),
-		date.Month(),
-		date.Year(),
-		date.Hour(),
-		date.Minute(),
-		date.Second())
+func main() {
+	app := &cli.App{
+		Name:  "Party invites",
+		Usage: "runs a local website for party invites",
+		Flags: []cli.Flag{
+			&cli.IntFlag{
+				Name:    "port",
+				Value:   5000,
+				Usage:   "Port to listen on",
+				Aliases: []string{"p"},
+			},
+			&cli.StringFlag{
+				Name:    "connectionString",
+				Value:   ":memory:",
+				Usage:   "The SQLite connection string to use",
+				Aliases: []string{"cs"},
+			},
+		},
+		Action: launch,
+	}
+
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func init() {
-	fmt.Println("Initialize database")
-	db = rsvpDatabase{ConnectionString: "./rsvp.db"}
+func launch(c *cli.Context) error {
+
+	db = rsvpDatabase{ConnectionString: c.String("connectionString")}
+	fmt.Printf("Using connection '%s'\n", db.ConnectionString)
+
 	err := db.create()
 	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	err = db.initialize()
-	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
 
-	fmt.Println("Initialize templates")
+	err = db.initialize()
+	if err != nil {
+		return err
+	}
 
 	templateFuncs := template.FuncMap{
 		"fmtDate": fmtDate,
 	}
 
-	tmpl = template.Must(template.New("").Funcs(templateFuncs).ParseGlob("./templates/*"))
-
-	initOk = true
-}
-
-func main() {
-	if !initOk {
-		log.Println("Initialization failed")
-		return
+	tmpl, err = template.New("").Funcs(templateFuncs).ParseGlob("./templates/*")
+	if err != nil {
+		return err
 	}
 
 	mux := http.NewServeMux()
@@ -60,11 +70,12 @@ func main() {
 	mux.HandleFunc("/rsvp", handleForm)
 	mux.HandleFunc("/list", basicAuth(handleList))
 
+	addr := fmt.Sprintf(":%d", c.Int("port"))
 	server := &http.Server{
-		Addr:    ":5000",
+		Addr:    addr,
 		Handler: mux,
 	}
 
 	log.Printf("Start listen on %s\n", server.Addr)
-	log.Fatal(server.ListenAndServe())
+	return server.ListenAndServe()
 }
